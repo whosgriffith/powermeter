@@ -1,0 +1,16 @@
+[project]
+name = "powermeter"
+version = "0.1.0"
+description = "Prometheus exporter for a Tuya smart plug metering one PC"
+requires-python = ">=3.14"
+dependencies = [
+    "prometheus-client>=0.26.0",
+    "tinytuya>=1.20.0",
+]
+
+[project.scripts]
+powermeter = "powermeter:main"
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"

@@ -1,0 +1,17 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.venv/
+__pycache__/
+# tinytuya wizard output - contains local keys / API secret
+devices.json
+tinytuya.json
+tuya-raw.json
+snapshot.json

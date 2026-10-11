@@ -1,0 +1,9 @@
+# Run with a long retention, or Prometheus deletes data older than 15 days:
+#   prometheus --config.file=prometheus.yml --storage.tsdb.retention.time=10y
+global:
+  scrape_interval: 5s # match POLL_SECONDS in the exporter
+
+scrape_configs:
+  - job_name: powermeter
+    static_configs:
+      - targets: ["localhost:9850"]
