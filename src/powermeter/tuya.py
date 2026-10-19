@@ -1,23 +1,17 @@
 """
-TinyTuya crash course, as code.
-
-THE MENTAL MODEL
-----------------
 Every Tuya device exposes a flat dict of "Data Points" (DPS), keyed by a string
 number. Everything you do is reading or writing those keys:
 
     {"1": True, "9": 0, "18": 1234, "19": 2715, "20": 2301}
-      ^switch  ^timer  ^mA        ^W*10       ^V*10
 
 What each number means depends on the device model. Typical smart plug with
-energy metering (what you want for a power meter):
+energy metering:
 
     1   switch (bool)            18  current in mA (int)
     9   countdown seconds (int)  19  power in W, x10 (int)  -> 2715 = 271.5 W
     17  energy added (int)       20  voltage in V, x10 (int) -> 2301 = 230.1 V
 
-Some plugs use 4/5/6 instead of 18/19/20. Check yours with
-get_device(id).status() or the Tuya IoT platform ("Device Debugging" -> DP instruction set).
+Check yours with get_device(id).status() or the Tuya IoT platform.
 
 TO TALK TO A DEVICE LOCALLY YOU NEED 4 THINGS
 ---------------------------------------------
@@ -31,20 +25,6 @@ That asks for your Tuya IoT Cloud API key/secret, then writes devices.json.
 This app reads only devices.json and never talks to the cloud; the wizard
 (and its tinytuya.json creds) is only needed again if you re-pair a device.
 NOTE: the local_key changes every time you re-pair the device in the app.
-
-GOTCHAS
--------
-* TinyTuya does NOT raise on device errors. It returns a dict like
-  {"Error": "Network Error: Device Unreachable", "Err": "905", "Payload": None}.
-  Always check for "Error" (see `check()` below).
-* It's all blocking sockets; never call it directly from `async def` code.
-* Most devices accept only ONE local TCP connection at a time. If the Smart
-  Life app or another script is connected, you'll get timeouts.
-* Power readings are cached by many devices; `updatedps([18, 19, 20])` asks
-  the device to refresh them before you read.
-* Scanning uses UDP broadcast (ports 6666/6667/7000). Under WSL2 NAT you won't
-  see broadcasts from your LAN — run the scan on Windows/Linux host or use
-  WSL mirrored networking.
 """
 
 import json
@@ -83,20 +63,14 @@ def get_device(device_id: str, persist: bool = False) -> tinytuya.OutletDevice:
     """
     Build a device handle. Constructing it doesn't open a connection; the
     socket is opened lazily on the first command.
-
-    Device classes:
-      tinytuya.Device         generic, works for anything
-      tinytuya.OutletDevice   plugs/switches (turn_on/turn_off helpers)
-      tinytuya.BulbDevice     bulbs (set_colour, set_brightness_percentage, ...)
-      tinytuya.CoverDevice    curtains (open_cover, close_cover)
     """
     info = load_devices().get(device_id)
     if info is None:
         raise KeyError(device_id)
 
     if not info.get("ip"):
-        # tinytuya would fall back to address="Auto" (UDP broadcast scan), which
-        # never sees the LAN under WSL2 and just hangs. Fail loudly instead.
+        # Without an ip, tinytuya falls back to address="Auto" (UDP broadcast scan),
+        # which is slow and unreliable across subnets/containers. Fail loudly instead.
         # Find it with: python -m tinytuya scan -force 192.168.x.0/24
         raise TuyaError({"Error": "No ip in devices.json", "Err": "no-ip", "Payload": None})
 
